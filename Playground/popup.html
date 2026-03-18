@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>eBay Listing Assistant</title>
+  <style>
+    :root {
+      --panel: rgba(18, 25, 50, 0.92);
+      --panel-2: rgba(255, 255, 255, 0.04);
+      --panel-3: rgba(255, 255, 255, 0.06);
+      --border: rgba(255, 255, 255, 0.1);
+      --border-strong: rgba(255, 255, 255, 0.16);
+      --text: #eef2ff;
+      --muted: #aeb8d3;
+      --accent: #6ea8fe;
+      --accent-2: #3b82f6;
+      --success: #34d399;
+      --danger: #f87171;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.32);
+      --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 420px;
+      min-width: 420px;
+      max-width: 420px;
+      background:
+        radial-gradient(circle at top left, rgba(59, 130, 246, 0.28), transparent 34%),
+        radial-gradient(circle at top right, rgba(147, 51, 234, 0.18), transparent 28%),
+        linear-gradient(180deg, #0a1020 0%, #11182b 100%);
+      color: var(--text);
+      font-family: var(--font);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    body {
+      overflow: hidden;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    .popup {
+      padding: 12px;
+      height: 600px;
+      max-height: 600px;
+    }
+
+    .shell {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      background: rgba(10, 15, 30, 0.82);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px;
+      background: linear-gradient(180deg, rgba(15, 21, 40, 0.98) 0%, rgba(15, 21, 40, 0.92) 100%);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      flex-shrink: 0;
+    }
+
+    .title {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.2;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .icon-button {
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      cursor: pointer;
+      transition:
+        transform 0.16s ease,
+        border-color 0.16s ease,
+        background-color 0.16s ease,
+        color 0.16s ease;
+    }
+
+    .icon-button:hover {
+      transform: translateY(-1px);
+      border-color: var(--border-strong);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .icon-button svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.85;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .icon-button.icon-danger:hover {
+      color: #fecaca;
+      border-color: rgba(248, 113, 113, 0.34);
+      background: rgba(248, 113, 113, 0.12);
+    }
+
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: var(--panel);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .card-head-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .card-title {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.25;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    #premiumSectionTitle {
+      font-size: 18px;
+      line-height: 1.2;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 24px;
+      padding: 0 9px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 400;
+      white-space: nowrap;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      cursor: pointer;
+      transition:
+        transform 0.16s ease,
+        box-shadow 0.16s ease,
+        border-color 0.16s ease,
+        background-color 0.16s ease;
+      white-space: nowrap;
+    }
+
+    .button:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    .button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .button-primary {
+      min-height: 44px;
+      width: 100%;
+      padding: 0 14px;
+      border: 0;
+      background: linear-gradient(180deg, var(--accent) 0%, var(--accent-2) 100%);
+      color: #08101f;
+      font-size: 16px;
+      font-weight: 600;
+      box-shadow: 0 10px 28px rgba(59, 130, 246, 0.3);
+    }
+
+    .button-secondary {
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      background: var(--panel-3);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 400;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .status {
+      min-height: 20px;
+      font-size: 13px;
+      line-height: 1.4;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .status.success {
+      color: var(--success);
+    }
+
+    .status.error {
+      color: var(--danger);
+    }
+
+    .data-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 360px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .data-list.is-empty,
+    .title-list.is-empty,
+    .description-output.is-empty,
+    .premium-html-output.is-empty {
+      padding: 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px dashed rgba(255, 255, 255, 0.14);
+    }
+
+    .empty-text {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .data-item {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 12px;
+      align-items: start;
+      padding: 4px 0;
+      background: transparent;
+    }
+
+    .data-label {
+      font-size: 14px;
+      line-height: 1.45;
+      font-weight: 400;
+      color: #dbe6ff;
+      word-break: break-word;
+    }
+
+    .data-value {
+      font-size: 14px;
+      line-height: 1.45;
+      font-weight: 400;
+      color: var(--text);
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
+    .title-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .title-item,
+    .description-output,
+    .premium-html-output {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.035);
+      padding: 12px;
+    }
+
+    .title-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .title-copy-wrap,
+    .description-copy-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    .title-text,
+    .description-text {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.45;
+      font-weight: 400;
+      color: var(--text);
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
+    .description-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .title-meta,
+    .description-meta,
+    .premium-meta {
+      font-size: 12px;
+      line-height: 1.3;
+      color: var(--muted);
+      font-weight: 400;
+      white-space: nowrap;
+    }
+
+    .field-block {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field-label-row,
+    .subsection-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .field-label,
+    .subsection-title {
+      font-size: 14px;
+      line-height: 1.35;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .field-note {
+      font-size: 12px;
+      line-height: 1.2;
+      color: var(--muted);
+    }
+
+    .field-help {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+
+    .text-control,
+    .textarea-control,
+    .code-output {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      outline: none;
+      transition:
+        border-color 0.16s ease,
+        background-color 0.16s ease,
+        box-shadow 0.16s ease;
+    }
+
+    .text-control::placeholder,
+    .textarea-control::placeholder,
+    .code-output::placeholder {
+      color: #95a3c7;
+    }
+
+    .text-control:focus,
+    .textarea-control:focus,
+    .code-output:focus {
+      border-color: rgba(110, 168, 254, 0.72);
+      background: rgba(255, 255, 255, 0.06);
+      box-shadow: 0 0 0 3px rgba(110, 168, 254, 0.16);
+    }
+
+    .text-control {
+      min-height: 42px;
+      padding: 0 12px;
+    }
+
+    .textarea-control {
+      min-height: 108px;
+      padding: 12px;
+      resize: vertical;
+    }
+
+    .shipping-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .style-switch {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .style-button {
+      min-height: 46px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition:
+        transform 0.16s ease,
+        border-color 0.16s ease,
+        background-color 0.16s ease,
+        box-shadow 0.16s ease,
+        color 0.16s ease;
+    }
+
+    .style-button:hover {
+      transform: translateY(-1px);
+      border-color: var(--border-strong);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .style-button.is-active {
+      border-color: rgba(110, 168, 254, 0.7);
+      background: linear-gradient(180deg, rgba(110, 168, 254, 0.22) 0%, rgba(59, 130, 246, 0.18) 100%);
+      color: #ffffff;
+      box-shadow: inset 0 0 0 1px rgba(110, 168, 254, 0.2);
+    }
+
+    .code-output {
+      min-height: 160px;
+      padding: 12px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+      white-space: pre;
+    }
+
+    .is-hidden {
+      display: none !important;
+    }
+
+    ::-webkit-scrollbar {
+      width: 9px;
+      height: 9px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+  </style>
+</head>
+<body>
+  <main class="popup">
+    <div id="shell" class="shell">
+      <header class="header">
+        <h1 class="title">eBay Listing Assistant</h1>
+
+        <div class="header-actions" aria-label="Popup actions">
+          <button id="clearButton" class="icon-button" type="button" aria-label="Clear popup data" title="Clear">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7h16"></path>
+              <path d="M9 7V5h6v2"></path>
+              <path d="M7 7l1 12h8l1-12"></path>
+            </svg>
+          </button>
+
+          <button id="closeButton" class="icon-button icon-danger" type="button" aria-label="Clear data and close popup" title="Close">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 6l12 12"></path>
+              <path d="M18 6L6 18"></path>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <div id="content" class="content">
+        <section class="section">
+          <div class="card">
+            <button id="loadButton" class="button button-primary" type="button">
+              Load data from current listing
+            </button>
+            <div id="loadStatus" class="status" aria-live="polite"></div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-head-left">
+                <h2 class="card-title">Extracted listing data</h2>
+                <span id="fieldCount" class="badge">0 fields</span>
+              </div>
+
+              <button id="toggleDataButton" class="button button-secondary" type="button" aria-expanded="false">
+                Show
+              </button>
+            </div>
+
+            <div id="listingDataList" class="data-list is-empty is-hidden" aria-live="polite">
+              <p class="empty-text">Nothing loaded yet.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="card">
+            <button id="createTitleButton" class="button button-primary" type="button" disabled>
+              Create title
+            </button>
+            <div id="titleStatus" class="status" aria-live="polite"></div>
+
+            <div id="titleList" class="title-list is-empty" aria-live="polite">
+              <p class="empty-text">No titles yet.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="card">
+            <button id="createDescriptionButton" class="button button-primary" type="button" disabled>
+              Create text description
+            </button>
+            <div id="descriptionStatus" class="status" aria-live="polite"></div>
+
+            <div id="descriptionOutput" class="description-output is-empty" aria-live="polite">
+              <p class="empty-text">No text description yet.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-head-left">
+                <h2 id="premiumSectionTitle" class="card-title">Premium descriptions</h2>
+                <span id="premiumStyleBadge" class="badge">Classic</span>
+              </div>
+            </div>
+
+            <div class="field-block">
+              <label class="field-label" for="premiumDescriptionInput">Describe your item</label>
+              <p class="field-help">
+                The more information you provide, the better the result will be.
+                You can simply copy an existing description from anywhere and paste it here.
+              </p>
+              <textarea
+                id="premiumDescriptionInput"
+                class="textarea-control"
+                placeholder="Vintage leather handbag, brown, multiple pockets, gold-tone hardware..."
+              ></textarea>
+            </div>
+
+            <div class="field-block">
+              <div class="field-label-row">
+                <span class="field-label">Shipping &amp; Delivery</span>
+                <span class="field-note">Optional</span>
+              </div>
+
+              <div class="shipping-grid">
+                <input
+                  id="shippingHandlingTimeInput"
+                  class="text-control"
+                  type="text"
+                  placeholder="Handling time (e.g. 1 business day)"
+                />
+                <input
+                  id="shippingShipsFromInput"
+                  class="text-control"
+                  type="text"
+                  placeholder="Ships from"
+                />
+                <input
+                  id="shippingEstimatedDeliveryInput"
+                  class="text-control"
+                  type="text"
+                  placeholder="Estimated delivery"
+                />
+              </div>
+            </div>
+
+            <div class="field-block">
+              <label class="field-label">Listing style</label>
+              <p class="field-help">
+                This affects layout and structure only. Content will be created from your input.
+              </p>
+
+              <div class="style-switch" role="group" aria-label="Listing style">
+                <button id="premiumStyleClassic" class="style-button" type="button" data-style-option="classic" aria-pressed="false">
+                  Classic
+                </button>
+                <button id="premiumStyleModern" class="style-button" type="button" data-style-option="modern" aria-pressed="false">
+                  Modern
+                </button>
+                <button id="premiumStyleSeo" class="style-button" type="button" data-style-option="seo" aria-pressed="false">
+                  SEO
+                </button>
+              </div>
+            </div>
+
+            <button id="createPremiumButton" class="button button-primary" type="button" disabled>
+              Generate premium description
+            </button>
+            <div id="premiumStatus" class="status" aria-live="polite"></div>
+
+            <div class="field-block">
+              <div class="subsection-head">
+                <span class="subsection-title">Generated HTML</span>
+                <span id="premiumHtmlMeta" class="premium-meta"></span>
+              </div>
+
+              <div id="premiumHtmlOutputShell" class="premium-html-output is-empty">
+                <p class="empty-text">Generate a premium description to see the HTML here.</p>
+              </div>
+            </div>
+
+            <div class="button-row">
+              <button id="copyPremiumHtmlButton" class="button button-secondary" type="button" disabled>
+                Copy HTML
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>
